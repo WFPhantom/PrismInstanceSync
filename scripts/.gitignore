@@ -5,12 +5,3 @@
 !InstanceSync*.jar
 **/*.jar.disabled
 **/*.jar.meta
-
-# Optional: Generic Modpack Ignores
-**/*.log
-/.mixin.out
-/saves
-/downloads
-/resourcepacks
-.curseclient
-options.txt

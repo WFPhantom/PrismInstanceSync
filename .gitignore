@@ -1,0 +1,6 @@
+# gitignore
+/.idea
+/lib
+/out
+InstanceSync.iml
+/src/META-INF
