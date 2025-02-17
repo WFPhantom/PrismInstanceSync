@@ -10,17 +10,15 @@ Prism InstanceSync differs from the original by fully working with Prism, regard
 ## To Prepare your modlist
 **You need to make sure Prism Indexing is enabled, as it uses the .index folder to get the File IDs it needs for download.**
 
-This has its limitations, as files that cannot be indexed (such as connector right now for some reason), will not be synced. a workaround for this is to manually create the .pw.toml files for the mods that are missing it.
-
 Right-click your Prism instance, press edit, go to Mods, and on the bottom right press "Export modlist". The modlist MUST be in JSON format, and it MUST include the filename. Name the file as you want, and add it in the field in the Setup.bat/Setup.sh
 
-Currently, this only works with Prism. For the Curse's minecraftinstance.json format, use Vazkii's InstanceSync, which is what this is forked from.
+Currently, this only works with Prism. For Curseforge's minecraftinstance.json format, use Vazkii's InstanceSync, which is what this is forked from.
 
 Prism InstanceSync can
 * Install itself with a simple script
 * Integrate seamlessly with git so that all the following happens every time you git pull:
 * Scan your modlist.json and mods folder to find work it needs to do
-* Automatically download missing mod jars from curse's or modrinth's CDN
+* Automatically download missing mod jars from Curseforge or Modrinth's CDNs
 * Delete mod jars that are no longer present in the instance
 * Handle .jar.disabled files, renaming them properly if you choose to enable/disable mods
 * Automatically reformat the Modlist 
