@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-// TODO: jar.disabled
 public class ModlistUpdater {
 
     public static void main(String[] args) {
