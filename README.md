@@ -14,7 +14,7 @@ Right-click your Prism instance, press edit, go to Mods, and on the bottom right
 
 Currently, this only works with Prism. For Curseforge's minecraftinstance.json format, use Vazkii's InstanceSync, which is what this is forked from.
 
-Prism InstanceSync can
+## Prism InstanceSync can
 * Install itself with a simple script
 * Integrate seamlessly with git so that all the following happens every time you git pull:
 * Scan your modlist.json and mods folder to find work it needs to do
