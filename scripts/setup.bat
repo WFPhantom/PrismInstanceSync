@@ -8,7 +8,7 @@ echo java -jar InstanceSync.jar >> .git/hooks/post-merge
 
 echo Done setting up hooks
 
-java -cp InstanceSync.jar wfphantom.instancesync.ModlistUpdater %MODLIST%
+:: java -cp InstanceSync.jar wfphantom.instancesync.ModlistUpdater %MODLIST%
 java -jar InstanceSync.jar
 
 pause

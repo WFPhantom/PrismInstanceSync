@@ -4,6 +4,8 @@ Git hook to allow for modpack version control without moving around jar files.
 
 Prism InstanceSync is a git hook that automagically manages your modpack jar files from the JSON formatted Prism Launcher Modlist. This allows you to version control your modpack using git, without moving mod files around, neat!
 
+With Prism's modlist, it is much easier to view mod changes in git commits, because unlike Curseforge's minecraftinstance.json, Prism's modlist doesn't reset the order of mods every time you export it.
+
 Prism InstanceSync differs from the original by fully working with Prism, regardless of the vendor of the mod. I plan to eventually rewrite this to support more formats.
 
 
@@ -29,8 +31,6 @@ Currently, this only works with Prism. For Curseforge's minecraftinstance.json f
 * Extract the InstanceSync.jar file, as well as the .bat and .sh scripts into the root of your repository
 * Prepare your Modlist as described above
 * Add the lines in the included .gitignore file to your repository's .gitignore
-* If you are a Modpack dev, add the following lines to your setup.bat or setup.sh, depending on your OS. They go right above `java -jar InstanceSync.jar`
-  - `java -cp InstanceSync.jar wfphantom.instancesync.ModlistUpdater %MODLIST%` For your batch file
-  - `java -cp InstanceSync.jar wfphantom.instancesync.ModlistUpdater $MODLIST` For your shell file
+* If you are a Modpack dev, uncomment this line in your setup batch/shell file `java -cp InstanceSync.jar wfphantom.instancesync.ModlistUpdater` or make a new batch/shell file with that line in it. The end-user does not need to run the modlist updater
 * Run  setup.bat or setup.sh, whichever is appropriate for your OS
 * Add something to your repository's README that tells people to run the setup script
