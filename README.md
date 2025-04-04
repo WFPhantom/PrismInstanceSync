@@ -33,4 +33,5 @@ Currently, this only works with Prism. For Curseforge's minecraftinstance.json f
 * Add the lines in the included .gitignore file to your repository's .gitignore
 * If you are a Modpack dev, uncomment this line in your setup batch/shell file `java -cp InstanceSync.jar wfphantom.instancesync.ModlistUpdater` or make a new batch/shell file with that line in it. The end-user does not need to run the modlist updater
 * Run  setup.bat or setup.sh, whichever is appropriate for your OS
+* Modpack developers should change the "side" fields in the generated modlist! By default they're grabbed from the mods, but not all mods have it set right.
 * Add something to your repository's README that tells people to run the setup script

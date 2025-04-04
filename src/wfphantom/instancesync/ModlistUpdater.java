@@ -7,7 +7,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.moandjiezana.toml.Toml;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -17,7 +16,6 @@ import java.util.Iterator;
 import java.util.List;
 
 public class ModlistUpdater {
-
     public static void main(String[] args) {
         File indexDir = new File("mods/.index");
         if (!indexDir.exists()) {
@@ -84,16 +82,21 @@ public class ModlistUpdater {
                     Long fileId = toml.getLong("update.curseforge.file-id");
                     if (fileId != null) {
                         mod.addProperty("fileid", fileId.toString());
-                        return;
+                    } else {
+                        String modId = toml.getString("update.modrinth.mod-id");
+                        String version = toml.getString("update.modrinth.version");
+                        if (modId != null && version != null) {
+                            mod.addProperty("mod-id", modId);
+                            mod.addProperty("version", version);
+                            mod.remove("fileid");
+                        }
                     }
-                    String modId = toml.getString("update.modrinth.mod-id");
-                    String version = toml.getString("update.modrinth.version");
-                    if (modId != null && version != null) {
-                        mod.addProperty("mod-id", modId);
-                        mod.addProperty("version", version);
-                        mod.remove("fileid");
-                        return;
+                    String side = toml.getString("side");
+                    if (side == null) {
+                        side = "both";
                     }
+                    mod.addProperty("side", side);
+                    return;
                 }
             }
         }

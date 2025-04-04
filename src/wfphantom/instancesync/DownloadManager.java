@@ -23,11 +23,13 @@ import wfphantom.instancesync.Instance.Addon;
 public class DownloadManager {
 
     private final File modsDir;
+    private final String selectedSide;
     private ExecutorService executor;
     private int downloadCount;
 
-    public DownloadManager(File modsDir) {
+    public DownloadManager(File modsDir, String selectedSide) {
         this.modsDir = modsDir;
+        this.selectedSide = selectedSide;
     }
 
     public void downloadInstance(List<Addon> addons, JsonArray modList) {
@@ -36,10 +38,13 @@ public class DownloadManager {
         System.out.println("Downloading any missing mods");
         long time = System.currentTimeMillis();
 
-        for (Addon a : addons) {
-            downloadAddonIfNeeded(a);
+        for (Addon addon : addons) {
+            if (shouldSkipAddon(addon)) {
+                System.out.println("Skipping " + addon.filename + " (side: " + addon.side + ")");
+                continue;
+            }
+            downloadAddonIfNeeded(addon);
         }
-
         if (downloadCount == 0) {
             System.out.println("No mods need to be downloaded, yay!");
         } else {
@@ -59,6 +64,13 @@ public class DownloadManager {
         renameDisabledFiles(addons);
         deleteRemovedMods(modList);
     }
+    private boolean shouldSkipAddon(Addon addon) {
+        if (selectedSide.equals("both")) {
+            return false;
+        }
+        return !addon.side.equalsIgnoreCase(selectedSide);
+    }
+
 
     private void downloadAddonIfNeeded(Addon addon) {
         String filename = addon.filename;
@@ -71,14 +83,14 @@ public class DownloadManager {
         if (modId != null && version != null) {
             String downloadUrl = constructModrinthDownloadUrl(modId, version, actualFilename);
 
-            File modFile = new File(modsDir, actualFilename);
+            File modFile = new File(modsDir, filename);
             if (!modFile.exists()) {
                 download(modFile, downloadUrl, false);
             }
         } else if (fileid != null && !fileid.trim().isEmpty()) {
             String downloadUrl = constructCurseForgeDownloadUrl(fileid, actualFilename);
 
-            File modFile = new File(modsDir, actualFilename);
+            File modFile = new File(modsDir, filename);
             if (!modFile.exists()) {
                 download(modFile, downloadUrl, true);
             }
@@ -175,7 +187,11 @@ public class DownloadManager {
             jsonFilenames.add(mod.get("filename").getAsString());
         }
 
-        File[] files = modsDir.listFiles(f -> f.isFile() && f.getName().endsWith(".jar") && !jsonFilenames.contains(f.getName()));
+        File[] files = modsDir.listFiles(f ->
+                f.isFile() &&
+                        (f.getName().endsWith(".jar") || f.getName().endsWith(".jar.disabled")) &&
+                        !jsonFilenames.contains(f.getName())
+        );
 
         if (files != null && files.length > 0) {
             for (File f : files) {

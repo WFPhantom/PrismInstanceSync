@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
+import java.util.Scanner;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -14,13 +15,11 @@ import wfphantom.instancesync.Instance.Addon;
 
 public final class InstanceSync {
 
-	private static final String VERSION = "1.0.3";
+	private static final String VERSION = "1.1.0";
 
 	public static void main(String[] args) {
 		String modlist = System.getenv("MODLIST");
-		if (!modlist.endsWith(".json")) {
-			modlist += ".json";
-		}
+		if (!modlist.endsWith(".json")) modlist += ".json";
 		System.out.println("Prism InstanceSync " + VERSION);
 
 		long time = System.currentTimeMillis();
@@ -36,19 +35,42 @@ public final class InstanceSync {
 		System.out.println("Found " + modlist);
 
 		File mods = new File(dir, "mods");
-		if(mods.exists() && !mods.isDirectory()) {
-			System.out.println("/mods exists but is a file, aborting");
-			System.exit(1);
-		}
-
-		if(!mods.exists()) {
+		if(!mods.exists() || !mods.isDirectory()) {
 			System.out.println("/mods does not exist, creating");
 			boolean success = mods.mkdir();
 			if (!success) {
 				System.out.println("Failed to create /mods directory, aborting");
 				System.exit(1);
 			}
+		}
+		Scanner scanner = new Scanner(System.in);
+		int choice = 0;
+
+		System.out.println("Choose mods to download:");
+		System.out.println("1 - Both sides");
+		System.out.println("2 - Client-side only");
+		System.out.println("3 - Server-side only");
+
+		while (choice < 1 || choice > 3) {
+			System.out.print("Enter your choice (1/2/3): ");
+			if (scanner.hasNextInt()) {
+				choice = scanner.nextInt();
+			} else {
+				scanner.next();
+				System.out.println("Invalid input. Please enter 1, 2, or 3.");
 			}
+		}
+		scanner.close();
+
+		String selectedSide = switch (choice) {
+			case 1 -> "both";
+			case 2 -> "client";
+			case 3 -> "server";
+			default -> throw new IllegalStateException("Unexpected value: " + choice);
+		};
+
+		System.out.println("Downloading " + selectedSide);
+
 
 		Gson gson = new Gson();
 		try {
@@ -63,16 +85,13 @@ public final class InstanceSync {
 
 			System.out.println("Instance loaded, has " + addons.size() + " mods\n");
 
-			DownloadManager manager = new DownloadManager(mods);
+			DownloadManager manager = new DownloadManager(mods, selectedSide);
 			manager.downloadInstance(addons, modListJson);
 
 			float secs = (float) (System.currentTimeMillis() - time) / 1000F;
 			System.out.printf("%nDone! Took %.2fs%n", secs);
 		} catch (IOException e) {
-			System.out.println("ERROR: Something bad happened!");
 			e.printStackTrace();
 		}
-
 	}
-
 }
