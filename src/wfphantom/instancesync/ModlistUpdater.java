@@ -91,11 +91,13 @@ public class ModlistUpdater {
                             mod.remove("fileid");
                         }
                     }
-                    String side = toml.getString("side");
-                    if (side == null) {
-                        side = "both";
+                    if (!mod.has("side")) {
+                        String side = toml.getString("side");
+                        if (side == null) {
+                            side = "both";
+                        }
+                        mod.addProperty("side", side);
                     }
-                    mod.addProperty("side", side);
                     return;
                 }
             }
