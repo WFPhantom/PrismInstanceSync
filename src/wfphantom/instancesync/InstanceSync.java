@@ -5,7 +5,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
@@ -14,8 +13,7 @@ import com.google.gson.reflect.TypeToken;
 import wfphantom.instancesync.Instance.Addon;
 
 public final class InstanceSync {
-
-	private static final String VERSION = "1.1.0";
+	private static final String VERSION = "1.1.1";
 
 	public static void main(String[] args) {
 		String modlist = System.getenv("MODLIST");

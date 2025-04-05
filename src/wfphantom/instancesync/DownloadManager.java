@@ -68,7 +68,7 @@ public class DownloadManager {
         if (selectedSide.equals("both")) {
             return false;
         }
-        return !addon.side.equalsIgnoreCase(selectedSide);
+        return !addon.side.equals("both") && !addon.side.equalsIgnoreCase(selectedSide);
     }
 
 
