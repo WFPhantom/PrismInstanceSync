@@ -84,16 +84,11 @@ public class DownloadManager {
             String downloadUrl = constructModrinthDownloadUrl(modId, version, actualFilename);
 
             File modFile = new File(modsDir, filename);
-            if (!modFile.exists()) {
-                download(modFile, downloadUrl, false);
-            }
+            if (!modFile.exists()) download(modFile, downloadUrl, false);
         } else if (fileid != null && !fileid.trim().isEmpty()) {
             String downloadUrl = constructCurseForgeDownloadUrl(fileid, actualFilename);
-
             File modFile = new File(modsDir, filename);
-            if (!modFile.exists()) {
-                download(modFile, downloadUrl, true);
-            }
+            if (!modFile.exists()) download(modFile, downloadUrl, true);
         } else {
             System.out.println("Skipping " + filename + " due to empty fileid and mod-id/version");
         }
@@ -125,6 +120,7 @@ public class DownloadManager {
         String firstPart = fileid.substring(0, 4);
         String secondPart = fileid.substring(4, 7);
         String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8);
+        encodedFilename = encodedFilename.replace("+", "%20");
         return "https://media.forgecdn.net/files/" + firstPart + "/" + secondPart + "/" + encodedFilename;
     }
 

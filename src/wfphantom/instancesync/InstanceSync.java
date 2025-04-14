@@ -13,7 +13,7 @@ import com.google.gson.reflect.TypeToken;
 import wfphantom.instancesync.Instance.Addon;
 
 public final class InstanceSync {
-	private static final String VERSION = "1.1.2";
+	private static final String VERSION = "1.1.3";
 
 	public static void main(String[] args) {
 		String modlist = System.getenv("MODLIST");
