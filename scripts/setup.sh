@@ -1,3 +1,5 @@
+#!/bin/sh
+
 MODLIST=modlist.json
 
 echo "#!/bin/sh" > .git/hooks/post-merge
