@@ -16,20 +16,18 @@ import java.util.Iterator;
 import java.util.List;
 
 public class ModlistUpdater {
-    public static void main(String[] args) {
+    public static void run() {
+        String modlist = "modlist.json";
         File indexDir = new File("mods/.index");
         if (!indexDir.exists()) {
             System.out.println("No .index folder found, aborting");
             return;
         }
-        String modlist = System.getenv("MODLIST");
-        if (!modlist.endsWith(".json")) {
-            modlist += ".json";
-        }
 
         File file = new File(modlist);
         if (!file.exists()) {
-            System.out.println("File not found: " + modlist);
+            System.out.println("Modlist not found - creating a new one");
+            createEmptyModlist(file);
             return;
         }
 
@@ -41,17 +39,10 @@ public class ModlistUpdater {
             Iterator<JsonElement> iterator = modList.iterator();
             while (iterator.hasNext()) {
                 JsonObject mod = iterator.next().getAsJsonObject();
-                if (".connector".equals(mod.get("filename").getAsString())) {
-                    iterator.remove();
-                } else {
-                    mod.entrySet().removeIf(entry ->
-                            !entry.getKey().equals("filename") && !entry.getKey().equals("fileid"));
+                    mod.entrySet().removeIf(entry -> !entry.getKey().equals("filename") && !entry.getKey().equals("fileid"));
                     String filename = mod.get("filename").getAsString();
                     updateModInfo(filename, mod);
-                    if (!mod.has("fileid") && !mod.has("mod-id")) {
-                        missingFileIds.add(filename);
-                    }
-                }
+                    if (!mod.has("fileid") && !mod.has("mod-id")) missingFileIds.add(filename);
             }
             try (FileWriter writer = new FileWriter(file)) {
                 gson.toJson(modList, writer);
@@ -66,6 +57,28 @@ public class ModlistUpdater {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    private static void createEmptyModlist(File file) {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+        JsonObject root = new JsonObject();
+        root.add("mods", newTopLevelCategoryArray());
+        root.add("shaderpacks", newTopLevelCategoryArray());
+        root.add("resourcepacks", newTopLevelCategoryArray());
+        // root.add("datapacks", newTopLevelCategoryArray());
+
+        try (FileWriter writer = new FileWriter(file)) {
+            writer.write("// Filename, Curseforge/Modrinth File ID, Modrinth Version ID, Side\n");
+            gson.toJson(root, writer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static JsonArray newTopLevelCategoryArray() {
+        JsonArray outer = new JsonArray();
+        outer.add(new JsonArray()); // matches: "mods": [ [] ]
+        return outer;
     }
 
     private static void updateModInfo(String filename, JsonObject mod) {

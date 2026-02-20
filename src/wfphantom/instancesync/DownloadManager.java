@@ -86,7 +86,7 @@ public class DownloadManager {
             File modFile = new File(modsDir, filename);
             if (!modFile.exists()) download(modFile, downloadUrl, false);
         } else if (fileid != null && !fileid.trim().isEmpty()) {
-            String downloadUrl = constructCurseForgeDownloadUrl(fileid, actualFilename);
+            String downloadUrl = constructCurseForgeDownloadUrl(Long.parseLong(fileid), actualFilename);
             File modFile = new File(modsDir, filename);
             if (!modFile.exists()) download(modFile, downloadUrl, true);
         } else {
@@ -112,16 +112,11 @@ public class DownloadManager {
         }
     }
 
-    private String constructCurseForgeDownloadUrl(String fileid, String filename) {
-        fileid = fileid.trim();
-        if (fileid.length() < 7) {
-            throw new IllegalArgumentException("Invalid fileid: " + fileid);
-        }
-        String firstPart = fileid.substring(0, 4);
-        String secondPart = fileid.substring(4, 7);
-        String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8);
-        encodedFilename = encodedFilename.replace("+", "%20");
-        return "https://media.forgecdn.net/files/" + firstPart + "/" + secondPart + "/" + encodedFilename;
+    private String constructCurseForgeDownloadUrl(long fileid, String filename) {
+        long firstPart = fileid / 1000;
+        long secondPart = fileid % 1000;
+        String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");
+        return "https://mediafilez.forgecdn.net/files/" + firstPart + "/" + secondPart + "/" + encodedFilename;
     }
 
     private String constructModrinthDownloadUrl(String modId, String version, String filename) {
@@ -144,7 +139,7 @@ public class DownloadManager {
                 if (useFallback) {
                     try {
                         System.out.println("Retrying with edge.forgecdn.net");
-                        downloadFile(target, downloadUrl.replace("media.forgecdn.net", "edge.forgecdn.net"));
+                        downloadFile(target, downloadUrl.replace("mediafilez.forgecdn.net", "edge.forgecdn.net"));
                         float secs = (float) (System.currentTimeMillis() - time) / 1000F;
                         System.out.printf("Finished downloading %s (Took %.2fs)%n", name, secs);
                     } catch (IOException ex) {

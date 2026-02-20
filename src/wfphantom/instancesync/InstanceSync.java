@@ -13,11 +13,16 @@ import com.google.gson.reflect.TypeToken;
 import wfphantom.instancesync.Instance.Addon;
 
 public final class InstanceSync {
-	private static final String VERSION = "1.1.3";
+	private static final String VERSION = "1.2.0";
 
 	public static void main(String[] args) {
-		String modlist = System.getenv("MODLIST");
-		if (!modlist.endsWith(".json")) modlist += ".json";
+		String modlist = "modlist.json";
+
+		if (args[0].equalsIgnoreCase("--dev")) {
+			ModlistUpdater.run();
+			return;
+		}
+
 		System.out.println("Prism InstanceSync " + VERSION);
 
 		long time = System.currentTimeMillis();
@@ -41,29 +46,45 @@ public final class InstanceSync {
 				System.exit(1);
 			}
 		}
-		Scanner scanner = new Scanner(System.in);
-		int choice = 0;
+		int choice = -1;
 
-		System.out.println("Choose mods to download:");
-		System.out.println("1 - Both sides");
-		System.out.println("2 - Client-side only");
-		System.out.println("3 - Server-side only");
-
-		while (choice < 1 || choice > 3) {
-			System.out.print("Enter your choice (1/2/3): ");
-			if (scanner.hasNextInt()) {
-				choice = scanner.nextInt();
-			} else {
-				scanner.next();
-				System.out.println("Invalid input. Please enter 1, 2, or 3.");
+		for (String arg : args) {
+			if (arg.startsWith("--option=")) {
+				try {
+					choice = Integer.parseInt(arg.substring("--option=".length()));
+				} catch (NumberFormatException ignored) {
+				}
 			}
 		}
-		scanner.close();
+
+		if (choice == -1) {
+			Scanner scanner = new Scanner(System.in);
+
+			System.out.println("Choose mods to download:");
+			System.out.println("1 - All (Use for playing on both singleplayer and multiplayer worlds)");
+			System.out.println("2 - Client (Use if only connecting to servers hosting the modpack and not playing singleplayer)");
+			System.out.println("3 - Server (Use if hosting the modpack)");
+			System.out.println("4 - Client-side only");
+			System.out.println("5 - Server-side only");
+
+			while (choice < 1 || choice > 5) {
+				System.out.print("Enter your choice: ");
+				if (scanner.hasNextInt()) {
+					choice = scanner.nextInt();
+				} else {
+					scanner.next();
+					System.out.println("Invalid input. Please enter 1-5.");
+				}
+			}
+			scanner.close();
+		}
 
 		String selectedSide = switch (choice) {
 			case 1 -> "both";
 			case 2 -> "client";
 			case 3 -> "server";
+			case 4 -> "client-only";
+			case 5 -> "server-only";
 			default -> throw new IllegalStateException("Unexpected value: " + choice);
 		};
 
