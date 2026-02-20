@@ -5,8 +5,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 
@@ -14,13 +16,14 @@ import wfphantom.instancesync.Instance.Addon;
 
 public final class InstanceSync {
 	private static final String VERSION = "1.2.0";
+	public static final String MODLIST = "modlist.json";
 
 	public static void main(String[] args) {
-		String modlist = "modlist.json";
-
-		if (args[0].equalsIgnoreCase("--dev")) {
-			ModlistUpdater.run();
-			return;
+		for (String arg : args) {
+			if (arg.equalsIgnoreCase("--dev")) {
+				ModlistUpdater.run();
+				return;
+			}
 		}
 
 		System.out.println("Prism InstanceSync " + VERSION);
@@ -29,13 +32,13 @@ public final class InstanceSync {
 		File dir = new File(".");
 		System.out.println("Running in " + dir.getAbsolutePath());
 
-		File instanceFile = new File(dir, modlist);
+		File instanceFile = new File(dir, MODLIST);
 		if(!instanceFile.exists()) {
-			System.out.println("No " + modlist +  " file exists in this directory, aborting");
-			System.exit(1);
+			System.out.println("No modlist exists in this directory, aborting");
+			return;
 		}
 
-		System.out.println("Found " + modlist);
+		System.out.println("Found " + MODLIST);
 
 		File mods = new File(dir, "mods");
 		if(!mods.exists() || !mods.isDirectory()) {
@@ -43,11 +46,11 @@ public final class InstanceSync {
 			boolean success = mods.mkdir();
 			if (!success) {
 				System.out.println("Failed to create /mods directory, aborting");
-				System.exit(1);
+				return;
 			}
 		}
-		int choice = -1;
 
+		int choice = 0;
 		for (String arg : args) {
 			if (arg.startsWith("--option=")) {
 				try {
@@ -57,7 +60,7 @@ public final class InstanceSync {
 			}
 		}
 
-		if (choice == -1) {
+		if (choice == 0) {
 			Scanner scanner = new Scanner(System.in);
 
 			System.out.println("Choose mods to download:");
@@ -80,7 +83,7 @@ public final class InstanceSync {
 		}
 
 		String selectedSide = switch (choice) {
-			case 1 -> "both";
+			case 1 -> "all";
 			case 2 -> "client";
 			case 3 -> "server";
 			case 4 -> "client-only";
@@ -92,15 +95,17 @@ public final class InstanceSync {
 
 
 		Gson gson = new Gson();
-		try {
-			System.out.println("Reading " + modlist);
-			List<Addon> addons = gson.fromJson(new FileReader(instanceFile), new TypeToken<List<Addon>>(){}.getType());
+		try (FileReader reader = new FileReader(instanceFile)) {
+			System.out.println("Reading " + MODLIST);
 
-			if(addons == null) {
-				System.out.println("Couldn't load" + modlist + ", aborting");
-				System.exit(1);
+			JsonElement root = JsonParser.parseReader(reader);
+			JsonArray modListJson = root.getAsJsonArray();
+
+			List<Addon> addons = gson.fromJson(modListJson, new TypeToken<List<Addon>>() {}.getType());
+			if (addons == null) {
+				System.out.println("Couldn't load modlist, aborting");
+				return;
 			}
-			JsonArray modListJson = JsonParser.parseReader(new FileReader(instanceFile)).getAsJsonArray();
 
 			System.out.println("Instance loaded, has " + addons.size() + " mods\n");
 
@@ -110,7 +115,7 @@ public final class InstanceSync {
 			float secs = (float) (System.currentTimeMillis() - time) / 1000F;
 			System.out.printf("%nDone! Took %.2fs%n", secs);
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println("Error: " + e.getMessage());
 		}
 	}
 }
