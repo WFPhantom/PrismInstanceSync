@@ -15,7 +15,6 @@ import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import java.util.ArrayList;
 
 import wfphantom.instancesync.Instance.Addon;
@@ -40,7 +39,7 @@ public class DownloadManager {
 
         for (Addon addon : addons) {
             if (shouldSkipAddon(addon)) {
-                System.out.println("Skipping " + addon.filename + " (side: " + addon.side + ")");
+                System.out.println("Skipping " + addon.filename() + " (side: " + addon.side() + ")");
                 continue;
             }
             downloadAddonIfNeeded(addon);
@@ -51,32 +50,35 @@ public class DownloadManager {
             try {
                 executor.shutdown();
                 boolean terminated = executor.awaitTermination(1, TimeUnit.DAYS);
-
-                if (!terminated) {
-                    System.out.println("Timeout elapsed before termination completed.");
-                }
+                if (!terminated) System.out.println("Timeout elapsed before termination completed.");
                 float secs = (float) (System.currentTimeMillis() - time) / 1000F;
                 System.out.printf("Finished downloading %d mods (Took %.2fs)%n%n", downloadCount, secs);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                System.out.println("Download interrupted" + e.getMessage());
             }
         }
         renameDisabledFiles(addons);
         deleteRemovedMods(modList);
     }
     private boolean shouldSkipAddon(Addon addon) {
-        if (selectedSide.equals("both")) {
-            return false;
-        }
-        return !addon.side.equals("both") && !addon.side.equalsIgnoreCase(selectedSide);
+        String side = addon.side().toLowerCase();
+        return switch (selectedSide.toLowerCase()) {
+            case "all" -> false;
+            case "client" -> !(side.equals("client") || side.equals("both"));
+            case "server" -> !(side.equals("server") || side.equals("both"));
+            case "client-only" -> !side.equals("client");
+            case "server-only" -> !side.equals("server");
+            case "both-only" -> !side.equals("both");
+            default -> true;
+        };
     }
 
 
     private void downloadAddonIfNeeded(Addon addon) {
-        String filename = addon.filename;
-        String fileid = addon.fileid;
-        String modId = addon.modId;
-        String version = addon.version;
+        String filename = addon.filename();
+        String fileid = addon.fileid();
+        String modId = addon.modId();
+        String version = addon.version();
 
         String actualFilename = filename.endsWith(".jar.disabled") ? filename.substring(0, filename.length() - 9) : filename;
 
@@ -96,7 +98,7 @@ public class DownloadManager {
 
     private void renameDisabledFiles(List<Addon> addons) {
         for (Addon addon : addons) {
-            String filename = addon.filename;
+            String filename = addon.filename();
             if (filename.endsWith(".jar.disabled")) {
                 String actualFilename = filename.substring(0, filename.length() - 9);
                 File modFile = new File(modsDir, actualFilename);
@@ -143,8 +145,7 @@ public class DownloadManager {
                         float secs = (float) (System.currentTimeMillis() - time) / 1000F;
                         System.out.printf("Finished downloading %s (Took %.2fs)%n", name, secs);
                     } catch (IOException ex) {
-                        System.out.println("Failed to download " + name + " from fallback URL");
-                        ex.printStackTrace();
+                        System.out.println("Failed to download " + name + " from fallback URL" + ex.getMessage());
                     }
                 }
             }
@@ -172,17 +173,7 @@ public class DownloadManager {
     private void deleteRemovedMods(JsonArray modList) {
         System.out.println("Deleting any removed mods");
 
-        List<String> jsonFilenames = new ArrayList<>();
-        for (JsonElement element : modList) {
-            JsonObject mod = element.getAsJsonObject();
-            jsonFilenames.add(mod.get("filename").getAsString());
-        }
-
-        File[] files = modsDir.listFiles(f ->
-                f.isFile() &&
-                        (f.getName().endsWith(".jar") || f.getName().endsWith(".jar.disabled")) &&
-                        !jsonFilenames.contains(f.getName())
-        );
+        File[] files = getFiles(modList);
 
         if (files != null && files.length > 0) {
             for (File f : files) {
@@ -197,5 +188,17 @@ public class DownloadManager {
         } else {
             System.out.println("No mods were removed, woo!");
         }
+    }
+
+    private File[] getFiles(JsonArray modList) {
+        List<String> jsonFilenames = new ArrayList<>();
+        for (JsonElement element : modList) {
+            if (!element.isJsonArray()) continue;
+            JsonArray row = element.getAsJsonArray();
+            if (row.isEmpty()) continue;
+            jsonFilenames.add(row.get(0).getAsString());
+        }
+        return modsDir.listFiles(f -> f.isFile() && (f.getName().endsWith(".jar") || f.getName().endsWith(".jar.disabled")) && !jsonFilenames.contains(f.getName())
+        );
     }
 }
