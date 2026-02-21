@@ -4,3 +4,9 @@
 /out
 InstanceSync.iml
 /src/META-INF
+
+# tests
+/shaderpacks
+/mods
+/resourcepacks
+/datapacks

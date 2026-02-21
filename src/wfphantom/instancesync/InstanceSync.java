@@ -18,7 +18,7 @@ public final class InstanceSync {
 	public static void main(String[] args) {
 		for (String arg : args) {
 			if (arg.equalsIgnoreCase("--dev")) {
-				ModlistUpdater.run();
+				ModlistUpdater.run(args);
 				return;
 			}
 		}
@@ -89,7 +89,7 @@ public final class InstanceSync {
 			System.out.println("Reading " + MODLIST);
 
 			JsonReader reader = new JsonReader(fr);
-			reader.setLenient(true);
+			reader.setStrictness(Strictness.LENIENT);
 
 			JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
 
