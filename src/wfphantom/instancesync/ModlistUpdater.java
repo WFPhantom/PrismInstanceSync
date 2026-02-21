@@ -112,7 +112,7 @@ public class ModlistUpdater {
             out.write("\"datapacks\":[\n");
             writeRows(out, gson, datapackRows);
             out.write("]\n");
-            out.write("}\n");
+            out.write("}");
             System.out.println("Wrote modlist to: " + modlistPath.toAbsolutePath());
         } catch (IOException e) {
             System.out.println("Failed to write modlist: " + e.getMessage());
