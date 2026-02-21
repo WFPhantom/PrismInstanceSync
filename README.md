@@ -29,7 +29,7 @@ Prism InstanceSync differs from the Vazkii's InstanceSync by fully working with 
 ## Args
 ```
 --dev - Generate and update the modlist.json file.
---indexDir<path> - Specify a different directory for packwiz files relative to PrismInstanceSync.jar, useful if other launchers use packwiz, DO NOT CHANGE IF USING DEFAULT PRISM.
+--indexDir=<path> - Specify a different directory for packwiz files relative to PrismInstanceSync.jar, useful if other launchers use packwiz, DO NOT CHANGE IF USING DEFAULT PRISM.
 --option=<1-6> - Automatically selects a download option without asking the user
 1: All mods, recommended if the user plans on playing on both singleplayer and multiplayer worlds.
 2: Client and "Both sided" mods without Server Side only mods, recommended if the user plans on only playing on a multiplayer world. Singleplayer may differ from the multiplayer experience.

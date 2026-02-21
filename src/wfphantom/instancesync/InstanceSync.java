@@ -37,15 +37,10 @@ public final class InstanceSync {
 
 		System.out.println("Found " + MODLIST);
 
-		File mods = new File(dir, "mods");
-		if(!mods.exists() || !mods.isDirectory()) {
-			System.out.println("/mods does not exist, creating");
-			boolean success = mods.mkdir();
-			if (!success) {
-				System.out.println("Failed to create /mods directory, aborting");
-				return;
-			}
-		}
+		ensureDirExists(new File(dir, "mods"));
+		ensureDirExists(new File(dir, "shaderpacks"));
+		ensureDirExists(new File(dir, "resourcepacks"));
+		ensureDirExists(new File(dir, "datapacks"));
 
 		int choice = 0;
 		for (String arg : args) {
@@ -60,13 +55,12 @@ public final class InstanceSync {
 		if (choice == 0) {
 			Scanner scanner = new Scanner(System.in);
 
-			System.out.println("Choose mods to download:");
-			System.out.println("1 - All (Use for playing on both singleplayer and multiplayer worlds)");
-			System.out.println("2 - Client (Use if only connecting to servers hosting the modpack and not playing singleplayer)");
-			System.out.println("3 - Server (Use if hosting the modpack)");
-			System.out.println("4 - Client-side only");
-			System.out.println("5 - Server-side only");
-			System.out.println("\"both\"-side only");
+			System.out.println("Choose files to download:");
+			System.out.println("1 - All");
+			System.out.println("2 - Client (client + both)");
+			System.out.println("3 - Server (server + both)");
+			System.out.println("4 - Client-only");
+			System.out.println("5 - Server-only");
 
 			while (choice < 1 || choice > 5) {
 				System.out.print("Enter your choice: ");
@@ -86,24 +80,23 @@ public final class InstanceSync {
 			case 3 -> "server";
 			case 4 -> "client-only";
 			case 5 -> "server-only";
-			case 6 -> "both-only";
 			default -> throw new IllegalStateException("Unexpected value: " + choice);
 		};
+
 		System.out.println("Downloading " + selectedSide);
+
 		try (FileReader fr = new FileReader(instanceFile)) {
 			System.out.println("Reading " + MODLIST);
+
 			JsonReader reader = new JsonReader(fr);
 			reader.setLenient(true);
+
 			JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-			JsonArray modsRows = root.getAsJsonArray("mods");
-			if (modsRows == null) {
-				System.out.println("Couldn't load modlist (missing \"mods\"), aborting");
-				return;
-			}
-			List<Addon> addons = parseAddonsFromRows(modsRows);
-			System.out.println("Instance loaded, has " + addons.size() + " mods\n");
-			DownloadManager manager = new DownloadManager(mods, selectedSide);
-			manager.downloadInstance(addons, modsRows);
+
+			downloadCategory(root, "mods", new File(dir, "mods"), selectedSide, "mods", ".jar");
+			downloadCategory(root, "shaderpacks", new File(dir, "shaderpacks"), selectedSide, "shaderpacks", ".zip");
+			downloadCategory(root, "resourcepacks", new File(dir, "resourcepacks"), selectedSide, "resourcepacks", ".zip");
+			downloadCategory(root, "datapacks", new File(dir, "datapacks"), selectedSide, "datapacks", ".zip");
 
 			float secs = (float) (System.currentTimeMillis() - time) / 1000F;
 			System.out.printf("%nDone! Took %.2fs%n", secs);
@@ -111,6 +104,29 @@ public final class InstanceSync {
 			System.out.println("Error: " + e.getMessage());
 		}
 	}
+
+	private static void ensureDirExists(File dir) {
+		if (!dir.exists() || !dir.isDirectory()) {
+			System.out.println("/" + dir.getName() + " does not exist, creating");
+			boolean success = dir.mkdir();
+			if (!success) {
+				throw new IllegalStateException("Failed to create directory: " + dir.getPath());
+			}
+		}
+	}
+
+	private static void downloadCategory(JsonObject root, String key, File targetDir, String selectedSide, String label, String... extensions) {
+		JsonArray rows = root.getAsJsonArray(key);
+		if (rows == null) {
+			System.out.println("No \"" + key + "\" section in modlist, skipping");
+			return;
+		}
+
+		List<Addon> addons = parseAddonsFromRows(rows);
+		DownloadManager manager = new DownloadManager(targetDir, selectedSide, label, extensions);
+		manager.downloadInstance(addons, rows);
+	}
+
 	private static List<Addon> parseAddonsFromRows(JsonArray rows) {
 		List<Addon> addons = new ArrayList<>();
 		for (JsonElement el : rows) {
@@ -122,6 +138,7 @@ public final class InstanceSync {
 			String id1 = r.get(1).getAsString();
 			String id2 = r.get(2).getAsString();
 			String side = r.get(3).getAsString();
+
 			boolean curseforge = isDigitsOnly(id1) && isDigitsOnly(id2);
 			if (curseforge) {
 				addons.add(new Addon(filename, id2, null, null, side));
@@ -131,6 +148,7 @@ public final class InstanceSync {
 		}
 		return addons;
 	}
+
 	private static boolean isDigitsOnly(String s) {
 		if (s == null || s.isEmpty()) return false;
 		for (int i = 0; i < s.length(); i++) {
