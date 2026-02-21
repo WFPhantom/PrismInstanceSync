@@ -61,6 +61,7 @@ public final class InstanceSync {
 			System.out.println("3 - Server (server + both)");
 			System.out.println("4 - Client-only");
 			System.out.println("5 - Server-only");
+			System.out.println("6 - \"both\"-side only");
 
 			while (choice < 1 || choice > 5) {
 				System.out.print("Enter your choice: ");
@@ -80,6 +81,7 @@ public final class InstanceSync {
 			case 3 -> "server";
 			case 4 -> "client-only";
 			case 5 -> "server-only";
+			case 6 -> "both-only";
 			default -> throw new IllegalStateException("Unexpected value: " + choice);
 		};
 
