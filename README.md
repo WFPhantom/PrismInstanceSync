@@ -15,6 +15,7 @@ Prism InstanceSync differs from the Vazkii's InstanceSync by fully working with 
 * Automatically download missing mods, shaders, resourcepacks and datapacks from Curseforge or Modrinth
 * Delete files that are no longer present in the instance
 * Handle .disabled files, renaming them properly if you choose to enable/disable mods
+* Automatically update or add the loader on your instance
 
 ## How to Use
 
