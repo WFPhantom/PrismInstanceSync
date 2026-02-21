@@ -1,15 +1,14 @@
 package wfphantom.instancesync;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
+import com.google.gson.stream.JsonReader;
 import com.moandjiezana.toml.Toml;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Reader;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -24,12 +23,33 @@ import java.util.Set;
 import static wfphantom.instancesync.InstanceSync.MODLIST;
 
 public class ModlistUpdater {
-    public static void run() {
-        Path modsIndexDir = Path.of("mods", ".index");
+    public static void run(String[] args) {
+        Path jarDir = getJarDir();
+        Path modsIndexDir = jarDir.resolve(Path.of("mods", ".index"));
+        for (String arg : args) {
+            if (arg != null && arg.startsWith("--indexDir=")) {
+                String value = arg.substring("--indexDir=".length());
+                if (value.isBlank()) {
+                    System.out.println("--indexDir was provided but empty; using default mods/.index");
+                } else {
+                    modsIndexDir = jarDir.resolve(value).normalize();
+                }
+            } else if (arg != null && arg.equals("--indexDir")) {
+                System.out.println("Invalid arg: use --indexDir=<path> (missing '='); using default mods/.index");
+            } else if (arg != null && arg.startsWith("--indexDir") && !arg.startsWith("--indexDir=")) {
+                System.out.println("Invalid arg: use --indexDir=<path>; using default mods/.index");
+            }
+        }
+        String[] loader = detectLoaderFromMmcPack(jarDir);
+        runWithModsIndexDir(modsIndexDir, loader);
+    }
+
+    private static void runWithModsIndexDir(Path modsIndexDir, String[] loader) {
         if (!Files.isDirectory(modsIndexDir)) {
-            System.out.println("No mods/.index folder found, aborting");
+            System.out.println("No mods index dir found at \"" + modsIndexDir + "\", aborting");
             return;
         }
+        if (loader == null) loader = new String[]{"", ""};
         List<String> missingIds = new ArrayList<>();
         List<String[]> freshMods = readAddonRowsFromTomlDir(modsIndexDir, "mods", missingIds);
         Path shaderpacksDir = Path.of("shaderpacks");
@@ -75,6 +95,11 @@ public class ModlistUpdater {
         try (BufferedWriter out = Files.newBufferedWriter(modlistPath, StandardCharsets.UTF_8)) {
             out.write("// [filename, project-id/mod-id, file-id/version, side]\n");
             out.write("{\n");
+            out.write("\"loader\": [");
+            out.write(gson.toJson(loader[0]));
+            out.write(", ");
+            out.write(gson.toJson(loader[1]));
+            out.write("],\n");
             out.write("\"mods\":[\n");
             writeRows(out, gson, modsRows);
             out.write("],\n");
@@ -97,6 +122,76 @@ public class ModlistUpdater {
             for (String s : missingIds) {
                 System.out.println(s);
             }
+        }
+    }
+    private static String[] detectLoaderFromMmcPack(Path jarDir) {
+        try {
+            Path parent = jarDir == null ? null : jarDir.getParent();
+            if (parent == null) return null;
+
+            Path mmcPack = parent.resolve("mmc-pack.json");
+            if (!Files.isRegularFile(mmcPack)) {
+                System.out.println("mmc-pack.json is missing, are you sure you installed Prism InstanceSync to your modpack root?");
+                return null;
+            }
+            String json = Files.readString(mmcPack, StandardCharsets.UTF_8);
+            JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+
+            JsonArray components = root.getAsJsonArray("components");
+            if (components == null) return null;
+
+            JsonObject neoforged = null;
+            JsonObject intermediary = null;
+            JsonObject fabricLoader = null;
+
+            for (JsonElement el : components) {
+                if (!el.isJsonObject()) continue;
+                JsonObject c = el.getAsJsonObject();
+                JsonElement uidEl = c.get("uid");
+                if (uidEl == null) continue;
+
+                String uid = uidEl.getAsString();
+                if ("net.neoforged".equals(uid)) neoforged = c;
+                if ("net.fabricmc.intermediary".equals(uid)) intermediary = c;
+                if ("net.fabricmc.fabric-loader".equals(uid)) fabricLoader = c;
+            }
+
+            if (neoforged != null) {
+                String version = neoforged.has("version") ? neoforged.get("version").getAsString() : null;
+                if (version != null && !version.isBlank()) return new String[]{"NeoForge", version};
+            }
+
+            if (intermediary != null) {
+                String version = null;
+
+                if (fabricLoader != null && fabricLoader.has("version")) {
+                    version = fabricLoader.get("version").getAsString();
+                }
+                if (version == null || version.isBlank()) {
+                    version = intermediary.has("version") ? intermediary.get("version").getAsString() : null;
+                }
+
+                if (version != null && !version.isBlank()) return new String[]{"Fabric Loader", version};
+            }
+
+            return null;
+        } catch (Exception e) {
+            System.out.println("Failed to read mmc-pack.json for loader detection: " + e.getMessage());
+            return null;
+        }
+    }
+    private static Path getJarDir() {
+        Path path = Path.of(".");
+        try {
+            Path location = Path.of(ModlistUpdater.class.getProtectionDomain()
+                    .getCodeSource()
+                    .getLocation()
+                    .toURI());
+
+            Path dir = Files.isRegularFile(location) ? location.getParent() : location;
+            return dir == null ? path.toAbsolutePath() : dir.toAbsolutePath();
+        } catch (URISyntaxException e) {
+            return path.toAbsolutePath();
         }
     }
     private static void updateCategoryInPlace(List<String[]> existingRows, List<String[]> freshRows) {
@@ -126,12 +221,11 @@ public class ModlistUpdater {
         existingRows.removeIf(r -> r == null || r.length < 4 || r[1] == null || !seenId1.contains(r[1]));
     }
     private static JsonObject readModlistObjectSkippingFirstLineComment(Path modlistPath) throws IOException {
-        List<String> lines = Files.readAllLines(modlistPath, StandardCharsets.UTF_8);
-        if (!lines.isEmpty() && lines.getFirst().trim().startsWith("//")) {
-            lines = lines.subList(1, lines.size());
+        try (BufferedReader br = Files.newBufferedReader(modlistPath, StandardCharsets.UTF_8)) {
+            JsonReader reader = new JsonReader(br);
+            reader.setStrictness(Strictness.LENIENT);
+            return JsonParser.parseReader(reader).getAsJsonObject();
         }
-        String json = String.join("\n", lines).trim();
-        return JsonParser.parseString(json).getAsJsonObject();
     }
     private static List<String[]> readRowsFromCategory(JsonObject root, String categoryName) {
         List<String[]> rows = new ArrayList<>();
