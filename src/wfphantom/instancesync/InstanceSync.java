@@ -94,6 +94,18 @@ public final class InstanceSync {
 			reader.setStrictness(Strictness.LENIENT);
 
 			JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+			JsonArray modsRows = root.getAsJsonArray("mods");
+			JsonArray shaderRows = root.getAsJsonArray("shaderpacks");
+			JsonArray resourceRows = root.getAsJsonArray("resourcepacks");
+			JsonArray datapackRows = root.getAsJsonArray("datapacks");
+
+			System.out.println(
+					"Instance loaded, has "
+							+ modsRows.size() + " mods, "
+							+ shaderRows.size() + " shaderpacks, "
+							+ resourceRows.size() + " resourcepacks, "
+							+ datapackRows.size() + " datapacks\n"
+			);
 
 			downloadCategory(root, "mods", new File(dir, "mods"), selectedSide, "mods", ".jar");
 			downloadCategory(root, "shaderpacks", new File(dir, "shaderpacks"), selectedSide, "shaderpacks", ".zip");
