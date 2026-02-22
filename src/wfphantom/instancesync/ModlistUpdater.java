@@ -13,12 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static wfphantom.instancesync.InstanceSync.MODLIST;
 
@@ -91,6 +86,10 @@ public class ModlistUpdater {
         syncDisabledState(shaderpacksDir, shaderpackRows);
         syncDisabledState(resourcepacksDir, resourcepackRows);
         syncDisabledState(datapacksDir, datapackRows);
+        modsRows.sort(Comparator.comparing(a -> a[0].toLowerCase()));
+        shaderpackRows.sort(Comparator.comparing(a -> a[0].toLowerCase()));
+        resourcepackRows.sort(Comparator.comparing(a -> a[0].toLowerCase()));
+        datapackRows.sort(Comparator.comparing(a -> a[0].toLowerCase()));
         Gson gson = new Gson();
         try (BufferedWriter out = Files.newBufferedWriter(modlistPath, StandardCharsets.UTF_8)) {
             out.write("// [filename, project-id/mod-id, file-id/version, side]\n");

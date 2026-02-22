@@ -16,7 +16,7 @@ import com.google.gson.stream.JsonReader;
 import wfphantom.instancesync.Instance.Addon;
 
 public final class InstanceSync {
-	private static final String VERSION = "1.2.0";
+	private static final String VERSION = "1.2.1";
 	public static final String MODLIST = "modlist.json";
 
 	public static void main(String[] args) {
