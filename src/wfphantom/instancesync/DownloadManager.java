@@ -6,18 +6,15 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.io.IOException;
-
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-
-import java.util.ArrayList;
 
 import wfphantom.instancesync.Instance.Addon;
 
@@ -38,7 +35,7 @@ public class DownloadManager {
         this.allowedExtensions = allowedExtensions == null ? new String[0] : allowedExtensions;
     }
 
-    public void downloadInstance(List<Addon> addons, JsonArray rows) {
+    public void downloadInstance(List<Addon> addons) {
         executor = Executors.newFixedThreadPool(10);
 
         System.out.println("Downloading any missing " + label);
@@ -68,7 +65,7 @@ public class DownloadManager {
         }
 
         renameDisabledFiles(addons);
-        deleteRemovedFiles(rows);
+        deleteRemovedFiles(addons);
     }
 
     private boolean shouldSkipAddon(Addon addon) {
@@ -83,7 +80,6 @@ public class DownloadManager {
             default -> true;
         };
     }
-
     private void downloadAddonIfNeeded(Addon addon) {
         String filename = addon.filename();
         String fileid = addon.fileid();
@@ -181,10 +177,16 @@ public class DownloadManager {
         }
     }
 
-    private void deleteRemovedFiles(JsonArray rows) {
+    private void deleteRemovedFiles(List<Addon> addons) {
         System.out.println("Deleting any removed " + label);
 
-        File[] files = getFilesToDelete(rows);
+        Set<String> wantedFilenames = new HashSet<>();
+        for (Addon addon : addons) {
+            if (shouldSkipAddon(addon)) continue;
+            wantedFilenames.add(addon.filename());
+        }
+
+        File[] files = targetDir.listFiles(f -> f.isFile() && isManagedFileName(f.getName()) && !wantedFilenames.contains(f.getName()));
 
         if (files != null && files.length > 0) {
             for (File f : files) {
@@ -199,20 +201,6 @@ public class DownloadManager {
         } else {
             System.out.println("No " + label + " were removed, woo!");
         }
-    }
-
-    private File[] getFilesToDelete(JsonArray rows) {
-        List<String> jsonFilenames = new ArrayList<>();
-        for (JsonElement element : rows) {
-            if (!element.isJsonArray()) continue;
-            JsonArray row = element.getAsJsonArray();
-            if (row.isEmpty()) continue;
-            jsonFilenames.add(row.get(0).getAsString());
-        }
-
-        return targetDir.listFiles(f ->
-                f.isFile() && isManagedFileName(f.getName()) && !jsonFilenames.contains(f.getName())
-        );
     }
 
     private boolean isManagedFileName(String name) {

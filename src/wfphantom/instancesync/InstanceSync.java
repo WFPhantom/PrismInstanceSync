@@ -16,7 +16,7 @@ import com.google.gson.stream.JsonReader;
 import wfphantom.instancesync.Instance.Addon;
 
 public final class InstanceSync {
-	private static final String VERSION = "1.2.1";
+	private static final String VERSION = "1.2.2";
 	public static final String MODLIST = "modlist.json";
 
 	public static void main(String[] args) {
@@ -248,7 +248,7 @@ public final class InstanceSync {
 
 		List<Addon> addons = parseAddonsFromRows(rows);
 		DownloadManager manager = new DownloadManager(targetDir, selectedSide, label, extensions);
-		manager.downloadInstance(addons, rows);
+		manager.downloadInstance(addons);
 	}
 
 	private static List<Addon> parseAddonsFromRows(JsonArray rows) {
