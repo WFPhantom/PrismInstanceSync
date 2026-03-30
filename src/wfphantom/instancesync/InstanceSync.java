@@ -16,7 +16,7 @@ import com.google.gson.stream.JsonReader;
 import wfphantom.instancesync.Instance.Addon;
 
 public final class InstanceSync {
-	private static final String VERSION = "1.2.2";
+	private static final String VERSION = "1.3.0";
 	public static final String MODLIST = "modlist.json";
 
 	public static void main(String[] args) {
@@ -40,11 +40,6 @@ public final class InstanceSync {
 		}
 
 		System.out.println("Found " + MODLIST);
-
-		ensureDirExists(new File(dir, "mods"));
-		ensureDirExists(new File(dir, "shaderpacks"));
-		ensureDirExists(new File(dir, "resourcepacks"));
-		ensureDirExists(new File(dir, "datapacks"));
 
 		int choice = 0;
 		for (String arg : args) {
@@ -110,9 +105,14 @@ public final class InstanceSync {
 							+ datapackRows.size() + " datapacks\n"
 			);
 
+			if(!modsRows.isEmpty()) ensureDirExists(new File(dir, "mods"));
+			if(!shaderRows.isEmpty()) ensureDirExists(new File(dir, "shaderpacks"));
+			if(!resourceRows.isEmpty()) ensureDirExists(new File(dir, "resourcepacks"));
+			if(!datapackRows.isEmpty()) ensureDirExists(new File(dir, "datapacks"));
+
 			syncMmcPackLoaderFromModlist(root);
 			downloadCategory(root, "mods", new File(dir, "mods"), selectedSide, "mods", ".jar");
-			downloadCategory(root, "shaderpacks", new File(dir, "shaderpacks"), selectedSide, "shaderpacks", ".zip");
+			downloadCategoryShaders(root, new File(dir, "shaderpacks"));
 			downloadCategory(root, "resourcepacks", new File(dir, "resourcepacks"), selectedSide, "resourcepacks", ".zip");
 			downloadCategory(root, "datapacks", new File(dir, "datapacks"), selectedSide, "datapacks", ".zip");
 
@@ -272,7 +272,31 @@ public final class InstanceSync {
 		}
 		return addons;
 	}
-
+	private static void downloadCategoryShaders(JsonObject root, File targetDir) {
+		JsonArray rows = root.getAsJsonArray("shaderpacks");
+		if (rows == null) {
+			System.out.println("No \"" + "shaderpacks" + "\" section in modlist, skipping");
+			return;
+		}
+		List<Addon> addons = parseShaderpacksFromRows(rows);
+		DownloadManager manager = new DownloadManager(targetDir, "client", "shaderpacks", ".zip");
+		manager.downloadInstance(addons);
+	}
+	private static List<Addon> parseShaderpacksFromRows(JsonArray rows) {
+		List<Addon> addons = new ArrayList<>();
+		for (JsonElement el : rows) {
+			if (!el.isJsonArray()) continue;
+			JsonArray r = el.getAsJsonArray();
+			if (r.size() < 3) continue;
+			String filename = r.get(0).getAsString();
+			String id1 = r.get(1).getAsString();
+			String id2 = r.get(2).getAsString();
+			boolean curseforge = isDigitsOnly(id1) && isDigitsOnly(id2);
+			if (curseforge) addons.add(new Addon(filename, id2, null, null, "client"));
+			else addons.add(new Addon(filename, null, id1, id2, "client"));
+		}
+		return addons;
+	}
 	private static boolean isDigitsOnly(String s) {
 		if (s == null || s.isEmpty()) return false;
 		for (int i = 0; i < s.length(); i++) {

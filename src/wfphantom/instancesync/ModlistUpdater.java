@@ -51,7 +51,7 @@ public class ModlistUpdater {
         List<String[]> freshShaderpacks = Files.isDirectory(shaderpacksDir) ? readAddonRowsFromTomlDir(shaderpacksDir, "shaderpacks", missingIds) : new ArrayList<>();
         Path resourcepacksDir = Path.of("resourcepacks");
         List<String[]> freshResourcepacks = Files.isDirectory(resourcepacksDir) ? readAddonRowsFromTomlDir(resourcepacksDir, "resourcepacks", missingIds) : new ArrayList<>();
-        Path datapacksDir = Path.of("datapacks");
+        Path datapacksDir = Path.of("datapacks").resolve(".index");
         List<String[]> freshDatapacks = Files.isDirectory(datapacksDir) ? readAddonRowsFromTomlDir(datapacksDir, "datapacks", missingIds) : new ArrayList<>();
         Path modlistPath = Path.of(MODLIST);
         List<String[]> modsRows;
@@ -103,7 +103,7 @@ public class ModlistUpdater {
             writeRows(out, gson, modsRows);
             out.write("],\n");
             out.write("\"shaderpacks\":[\n");
-            writeRows(out, gson, shaderpackRows);
+            writeShaderRows(out, gson, shaderpackRows);
             out.write("],\n");
             out.write("\"resourcepacks\":[\n");
             writeRows(out, gson, resourcepackRows);
@@ -337,6 +337,20 @@ public class ModlistUpdater {
             out.write(gson.toJson(r[2]));
             out.write(", ");
             out.write(gson.toJson(r[3]));
+            out.write("]");
+            if (i < rows.size() - 1) out.write(",");
+            out.write("\n");
+        }
+    }
+    private static void writeShaderRows(BufferedWriter out, Gson gson, List<String[]> rows) throws IOException {
+        for (int i = 0; i < rows.size(); i++) {
+            String[] r = rows.get(i);
+            out.write("  [");
+            out.write(gson.toJson(r[0]));
+            out.write(", ");
+            out.write(gson.toJson(r[1]));
+            out.write(", ");
+            out.write(gson.toJson(r[2]));
             out.write("]");
             if (i < rows.size() - 1) out.write(",");
             out.write("\n");
