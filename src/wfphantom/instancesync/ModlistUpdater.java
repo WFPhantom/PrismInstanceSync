@@ -90,7 +90,7 @@ public class ModlistUpdater {
         shaderpackRows.sort(Comparator.comparing(a -> a[0].toLowerCase()));
         resourcepackRows.sort(Comparator.comparing(a -> a[0].toLowerCase()));
         datapackRows.sort(Comparator.comparing(a -> a[0].toLowerCase()));
-        Gson gson = new Gson();
+        Gson gson = new GsonBuilder().disableHtmlEscaping().create();
         try (BufferedWriter out = Files.newBufferedWriter(modlistPath, StandardCharsets.UTF_8)) {
             out.write("// [filename, project-id/mod-id, file-id/version, side]\n");
             out.write("{\n");

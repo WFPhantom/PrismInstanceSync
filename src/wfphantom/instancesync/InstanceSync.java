@@ -1,5 +1,8 @@
 package wfphantom.instancesync;
 
+import com.google.gson.*;
+import com.google.gson.stream.JsonReader;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -11,15 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import com.google.gson.*;
-import com.google.gson.stream.JsonReader;
-import wfphantom.instancesync.Instance.Addon;
-
 public final class InstanceSync {
-	private static final String VERSION = "1.3.0";
+	private static final String VERSION = "1.3.1";
 	public static final String MODLIST = "modlist.json";
 
-	public static void main(String[] args) {
+	static void main(String[] args) {
 		for (String arg : args) {
 			if (arg.equalsIgnoreCase("--dev")) {
 				ModlistUpdater.run(args);

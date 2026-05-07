@@ -2,21 +2,20 @@ package wfphantom.instancesync;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.io.IOException;
-
-import wfphantom.instancesync.Instance.Addon;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DownloadManager {
 
@@ -26,7 +25,7 @@ public class DownloadManager {
     private final String[] allowedExtensions;
 
     private ExecutorService executor;
-    private int downloadCount;
+    private final AtomicInteger downloadCount = new AtomicInteger();
 
     public DownloadManager(File targetDir, String selectedSide, String label, String... allowedExtensions) {
         this.targetDir = targetDir;
@@ -49,7 +48,7 @@ public class DownloadManager {
             downloadAddonIfNeeded(addon);
         }
 
-        if (downloadCount == 0) {
+        if (downloadCount.get() == 0) {
             System.out.println("No " + label + " need to be downloaded, yay!");
         } else {
             try {
@@ -57,7 +56,7 @@ public class DownloadManager {
                 boolean terminated = executor.awaitTermination(1, TimeUnit.DAYS);
                 if (!terminated) System.out.println("Timeout elapsed before termination completed.");
                 float secs = (float) (System.currentTimeMillis() - time) / 1000F;
-                System.out.printf("Finished downloading %d %s (Took %.2fs)%n%n", downloadCount, label, secs);
+                System.out.printf("Finished downloading %d %s (Took %.2fs)%n%n", downloadCount.get(), label, secs);
             } catch (InterruptedException e) {
                 System.out.println("Download interrupted: " + e.getMessage());
                 Thread.currentThread().interrupt();
@@ -158,7 +157,7 @@ public class DownloadManager {
             }
         };
 
-        downloadCount++;
+        downloadCount.incrementAndGet();
         executor.submit(run);
     }
 
